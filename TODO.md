@@ -5,13 +5,13 @@
 ### Data storage
 
 1. √ Clean up 2010 data
-*    Set up GeoCouch
-*    Import data into GeoCouch
+*  √ Set up GeoCouch locally
+*    Import data into GeoCouch - work out the best JSON representations
 *    Play with data via Couch queries - see if it will work as desired
 
 ### Backend
 
-1.    Decide on a backend system / framework - Node (+Express), Python (+?), Ruby (+Sinatra)
+1.    Decide on a backend system / framework - Node (+Express), Python (+Flask/Bottle), Ruby (+Sinatra)
 *    Hook up system to Couch
 *    Make a basic REST endpoint to get data for a tile
 *    Add a cache in front of Couch for tile data
@@ -33,6 +33,12 @@
 *    Customise the background to be colours based on no. of party seats
 *    Add a simple about page
 
+### Hosting
+
+1.    Set up Heroku app
+*    Set up IrisCouch account / database
+*    Populate IrisCouch with data
+*    Connect app with IrisCouch and publish
 
 ## Part 2 - Electorates
 
