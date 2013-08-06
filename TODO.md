@@ -6,7 +6,7 @@
 
 1. √ Clean up 2010 data
 *  √ Set up GeoCouch locally
-*    Import data into GeoCouch - work out the best JSON representations
+*  √ Import data into GeoCouch - work out the best JSON representations
 *    Play with data via Couch queries - see if it will work as desired
 
 ### Backend
