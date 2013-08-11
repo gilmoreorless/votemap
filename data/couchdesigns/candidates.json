@@ -1,8 +1,8 @@
 {
   "_id": "_design/candidates",
-  "_rev": "4-253f05dfb0ca0d0867f95c367cde8139",
+  "_rev": "5-1a39bf86156d95fdf28c6901758bb8b8",
   "views": {
-    "by_electorate_id": {
+    "by_division_id": {
       "map": "function(doc){ if(doc.datatype=='candidate') emit(doc.DivisionID, doc); }"
     }
   }
