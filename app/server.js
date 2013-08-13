@@ -18,7 +18,9 @@ app.get('/', function (req, res) {
     res.render('index.html');
 });
 
-// Map data
+/*** Data APIs ***/
+
+// List of candidates
 app.get('/data/candidates', function (req, res) {
     // TODO: Handle ?query param
 
@@ -27,12 +29,30 @@ app.get('/data/candidates', function (req, res) {
         opts.divisionId = req.query.divisionId;
     }
 
-    dataStore.getCandidates(opts).then(function (data) {
-        res.json(data);
-    }).fail(function (reason) {
-        console.error('FAIL GET /data/candidates:', reason);
-        res.send(500, {reason: reason});
-    });
+    dataStore.getCandidates(opts)
+        .then(res.json.bind(res))
+        .fail(function (reason) {
+            console.error('FAIL GET /data/candidates:', reason);
+            res.send(500, {reason: reason});
+        });
 });
+
+// Tile data - places
+app.get('/data/places/tile/:zoom/:x/:y', function (req, res) {
+    var opts = {
+        zoom: req.params.zoom,
+        x: req.params.x,
+        y: req.params.y,
+        withVotes: req.query.votes == 'true'
+    };
+
+    dataStore.getPlacesForTile(opts)
+        .then(res.json.bind(res))
+        .fail(function (reason) {
+            console.error('FAIL GET /data/places/tile:', reason);
+            res.send(500, {reason: reason});
+        });
+});
+
 
 app.listen(parseInt(process.env.PORT || 9876, 10));

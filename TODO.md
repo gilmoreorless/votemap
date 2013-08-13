@@ -12,15 +12,15 @@
 ### Backend
 
 1. √ Decide on a backend system / framework - Node (+Express), Python (+Flask/Bottle), Ruby (+Sinatra) - winner is Node/Express due to time constraints
-*    Hook up system to Couch
-*    Make a basic REST endpoint to get data for a tile
+*  √ Hook up system to Couch
+*  √ Make a basic REST endpoint to get data for a tile
 *    Add a cache in front of Couch for tile data
-*    Make basic REST endpoints to get all candidates
+*  √ Make basic REST endpoints to get all candidates
 
 ### Frontend
 
 1. √ Basic page with Leaflet
-*    Show dots for polling booths
+*  √ Show dots for polling booths
 *    Special styling (size, colour) for dots on map
 *    Click on dot to get more details of polling place results
 *    Get detailed list of candidates from server REST endpoint

@@ -6,6 +6,6 @@
     }
   },
   "spatial": {
-    "for_bounds": "function (doc) { if (doc.datatype == 'place' && doc.Longitude && doc.Latitude) { emit({ type: 'Point', coordinates: [+doc.Longitude, +doc.Latitude] }, [doc._id, doc]); } }"
+    "for_bounds": "function (doc) { if (doc.datatype == 'place' && doc.Longitude && doc.Latitude) { emit({ type: 'Point', coordinates: [+doc.Longitude, +doc.Latitude] }, doc); } }"
   }
 }
