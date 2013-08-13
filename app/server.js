@@ -3,6 +3,7 @@
  */
 
 var express = require('express');
+var _ = require('underscore');
 var dataStore = require('./votemap/data');
 
 var app = express();
@@ -25,12 +26,24 @@ app.get('/data/candidates', function (req, res) {
     // TODO: Handle ?query param
 
     var opts = {};
-    if (req.query.divisionId) {
-        opts.divisionId = req.query.divisionId;
+    var divisionId = req.query.divisionId;
+    if (divisionId) {
+        opts.divisionId = _.isArray(divisionId) ? _.map(divisionId, function (id) {
+            return +id || 0;
+        }) : +divisionId || 0;
     }
 
     dataStore.getCandidates(opts)
-        .then(res.json.bind(res))
+        .then(function (data) {
+            if (req.query.query) {
+                var query = req.query.query.toLowerCase();
+                data = _.filter(data, function (candidate) {
+                    return candidate.GivenNm.toLowerCase().indexOf(query) === 0 ||
+                           candidate.Surname.toLowerCase().indexOf(query) === 0;
+                });
+            }
+            res.json(data);
+        })
         .fail(function (reason) {
             console.error('FAIL GET /data/candidates:', reason);
             res.send(500, {reason: reason});
