@@ -2,17 +2,21 @@
 
 import os
 import csv
+import glob
 import couchdb
 
 dirbase = '../data/2010/processed'
 dirpath = os.path.realpath(os.path.join(os.path.dirname(__file__), dirbase))
+designpath = os.path.realpath(os.path.join(os.path.dirname(__file__), '../data/couchdesigns'))
 
-couch = couchdb.Server()
-db = couch['votemap-dev']
-batch_size = 5000
+couch_url = 'http://localhost:5984'
+couch_db = 'votemap-dev'
+couch = couchdb.Server(couch_url)
+db = couch[couch_db]
+batch_size = 10000
 
 
-def convert_file(filename, datatype, id_field, log_fields):
+def convert_file(filename, datatype, id_field, convert_fields, log_fields):
     print '\n--- Datatype: %s ---\n' % datatype
     with open(os.path.join(dirpath, filename), 'rb') as fin:
         data = csv.DictReader(fin)
@@ -20,6 +24,14 @@ def convert_file(filename, datatype, id_field, log_fields):
         for row in data:
             row['datatype'] = datatype
             row['_id'] = datatype + '-' + row[id_field]
+            for f in convert_fields:
+                if f in row:
+                    t = convert_fields[f]
+                    if t == 'int' and len(row[f]) > 0:
+                        row[f] = int(row[f])
+                    elif t == 'float' and len(row[f]) > 0:
+                        row[f] = float(row[f])
+
             # for lf in log_fields:
             #     print row[lf],
             # print
@@ -34,12 +46,23 @@ def convert_file(filename, datatype, id_field, log_fields):
 
 def run_candidates():
     filename = 'HouseCandidatesDownload-15508.csv'
-    convert_file(filename, 'candidate', 'CandidateID', ['GivenNm', 'Surname'])
+    convert_file(filename, 'candidate', 'CandidateID',
+                 {'DivisionID': 'int', 'CandidateID': 'int'},
+                 ['GivenNm', 'Surname'])
 
 
 def run_places():
     filename = 'GeneralPollingPlacesDownload-15508.csv'
-    convert_file(filename, 'place', 'PollingPlaceID', ['State', 'DivisionNm', 'PollingPlaceNm'])
+    convert_file(filename, 'place', 'PollingPlaceID',
+                 {
+                     'DivisionID': 'int',
+                     'PollingPlaceID': 'int',
+                     'PollingPlaceTypeID': 'int',
+                     'PremisesPostCode': 'int',
+                     'Latitude': 'float',
+                     'Longitude': 'float',
+                 },
+                 ['State', 'DivisionNm', 'PollingPlaceNm'])
 
 
 def run_votes_by_place():
@@ -50,6 +73,16 @@ def run_votes_by_place():
     tcp_dict = dict()
     docs = []
     saved = 0
+    convert_fields = {
+        'DivisionID': 'int',
+        'PollingPlaceID': 'int',
+        'CandidateID': 'int',
+        'BallotPosition': 'int',
+        'OrdinaryVotesFirstPrefs': 'int',
+        'OrdinaryVotesTCP': 'int',
+        'SwingFirstPrefs': 'float',
+        'SwingTCP': 'float',
+    }
 
     with open(os.path.join(dirpath, filename_tcp), 'rb') as fin_tcp:
         data_tcp = csv.DictReader(fin_tcp)
@@ -70,6 +103,15 @@ def run_votes_by_place():
                 tcp_row = tcp_dict[key]
                 row['OrdinaryVotesTCP'] = tcp_row['OrdinaryVotes']
                 row['SwingTCP'] = tcp_row['Swing']
+
+            for f in convert_fields:
+                if f in row:
+                    t = convert_fields[f]
+                    if t == 'int' and len(row[f]) > 0:
+                        row[f] = int(row[f])
+                    elif t == 'float' and len(row[f]) > 0:
+                        row[f] = float(row[f])
+
             docs.append(row)
             l = len(docs)
             if (l == batch_size):  # Batch updates
@@ -82,6 +124,17 @@ def run_votes_by_place():
         print '...Saving %d rows (%d total)...' % (l, saved)
         db.update(docs)
 
+
+def run_design_docs():
+    cmd_tpl = 'curl -X PUT {0}/{1}/_design/{2} --data-binary @{3}'
+    for filename in glob.glob(os.path.join(designpath, '*.json')):
+        name = os.path.splitext(os.path.basename(filename))[0]
+        # Yup, cheating, but I CBF going through the palavar of doing it properly via Python wrappers
+        cmd = cmd_tpl.format(couch_url, couch_db, name, filename)
+        os.system(cmd)
+
+
 run_candidates()
 run_places()
 run_votes_by_place()
+run_design_docs()

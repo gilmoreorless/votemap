@@ -1,6 +1,5 @@
 {
   "_id": "_design/candidates",
-  "_rev": "5-1a39bf86156d95fdf28c6901758bb8b8",
   "views": {
     "by_division_id": {
       "map": "function(doc){ if(doc.datatype=='candidate') emit(doc.DivisionID, doc); }"

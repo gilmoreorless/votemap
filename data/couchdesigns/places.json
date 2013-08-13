@@ -1,6 +1,5 @@
 {
   "_id": "_design/places",
-  "_rev": "4-87620dd23704ae4a50aeca857a4f56f8",
   "views": {
     "votes": {
       "map": "function (doc) { if (doc.datatype == 'votes-by-place') { var props = [ 'PollingPlaceID', 'PollingPlace', 'CandidateID', 'GivenNm', 'Surname', 'PartyAb', 'PartyNm', 'Elected', 'OrdinaryVotesFirstPrefs', 'OrdinaryVotesTCP', 'SwingFirstPrefs', 'SwingTCP' ]; var value = {}, prop; for (var i = 0, ii = props.length; i < ii; i++) { prop = props[i]; value[prop] = doc[prop]; } emit(doc.PollingPlaceID, value); } }"
