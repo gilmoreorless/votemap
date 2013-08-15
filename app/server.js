@@ -13,6 +13,7 @@ app.use(express.logger('dev'));
 app.use(express.static(__dirname + '/static'));
 app.engine('html', require('hjs').__express);
 app.set('view engine', 'hjs');
+// app.set('json spaces', 0);
 
 // Home page
 app.get('/', function (req, res) {
@@ -23,8 +24,6 @@ app.get('/', function (req, res) {
 
 // List of candidates
 app.get('/data/candidates', function (req, res) {
-    // TODO: Handle ?query param
-
     var opts = {};
     var divisionId = req.query.divisionId;
     if (divisionId) {
@@ -56,13 +55,32 @@ app.get('/data/places/tile/:zoom/:x/:y', function (req, res) {
         zoom: req.params.zoom,
         x: req.params.x,
         y: req.params.y,
-        withVotes: req.query.votes == 'true'
+        withVotes: false,
+        voteDetails: 'all'
     };
+    var votesQuery = req.query.votes;
+    if (votesQuery == 'true' || votesQuery == 'min' || votesQuery == 'full') {
+        opts.withVotes = true;
+        if (votesQuery == 'min') {
+            opts.voteDetails = ['CandidateID', 'OrdinaryVotesFirstPrefs', 'OrdinaryVotesTCP', 'SwingFirstPrefs', 'SwingTCP'];
+        }
+    }
 
     dataStore.getPlacesForTile(opts)
         .then(res.json.bind(res))
         .fail(function (reason) {
             console.error('FAIL GET /data/places/tile:', reason);
+            res.send(500, {reason: reason});
+        });
+});
+
+// Votes for a place
+app.get('/data/places/:id/votes', function (req, res) {
+    var id = +req.params.id || 0;
+    dataStore.getVotesForPlace({placeId: id})
+        .then(res.json.bind(res))
+        .fail(function (reason) {
+            console.error('FAIL GET /data/places/' + id + '/votes:', reason);
             res.send(500, {reason: reason});
         });
 });

@@ -41,7 +41,8 @@ function getPlacesForTile(opts) {
     ];
     var url = '_design/places/_spatial/for_bounds?bbox=' + bounds.join(',');
     console.log('GET {db}/' + url);
-    return Q.ninvoke(couch, 'get', url).then(function (data) {
+
+    var promise = Q.ninvoke(couch, 'get', url).then(function (data) {
         var geoPoints = _.map(data.rows, function (row) {
             return {
                 type: 'Feature',
@@ -56,7 +57,50 @@ function getPlacesForTile(opts) {
             features: geoPoints
         };
     });
+    if (opts.withVotes) {
+        promise = promise.then(function (data) {
+            var ids = _.map(data.features, function (place) {
+                return place.properties.PollingPlaceID;
+            });
+            return getVotesForPlace({placeId: ids}).then(function (voteData) {
+                var votesByPlace = _.groupBy(voteData, 'PollingPlaceID');
+                _.each(data.features, function (place) {
+                    place.properties.votes = _.map(votesByPlace[place.properties.PollingPlaceID], function (details) {
+                        if (_.isArray(opts.voteDetails)) {
+                            details = _.pick(details, opts.voteDetails);
+                        } else {
+                            details = _.omit(details, 'PollingPlaceID', 'PollingPlace');
+                        }
+                        return details;
+                    });
+                });
+                return data;
+            });
+        });
+    }
+
+    return promise;
+}
+
+function getVotesForPlace(opts) {
+    opts = _.extend({}, opts || {});
+    var view = couch.design('places').view('votes');
+    var query = {};
+    if (opts.placeId) {
+        if (_.isArray(opts.placeId)) {
+            query.keys = opts.placeId;
+        } else {
+            query.key = opts.placeId;
+        }
+    }
+
+    return Q.ninvoke(view, 'query', query).then(function (data) {
+        return _.map(data.rows, function (row) {
+            return row.value;
+        });
+    });
 }
 
 exports.getCandidates = getCandidates;
 exports.getPlacesForTile = getPlacesForTile;
+exports.getVotesForPlace = getVotesForPlace;

@@ -8,12 +8,22 @@ Get all candidates, optionally filtered by `query` (for free text search) or `di
 
 DONE? Yes
 
-### `/data/places/tile/{Z}/{X}/{Y}?votes=bool`
+### `/data/places/tile/{Z}/{X}/{Y}?votes={true|false|full|min}`
 
 Get GeoJSON data for polling places using OSM tile co-ordinates (zoom/X/Y).
-Optional `votes` parameter returns candidate/voting data as well (default `false`).
+Optional `votes` parameter also returns candidate/voting data for each place:
 
-DONE? Yes for general case, No for `votes`
+* `false` (default) - do not return voting data
+* `true` or `full` - return full voting data (candidate name, party, vote numbers)
+* `min` - return minimal voting data (cadidate ID and vote numbers only)
+
+DONE? Yes
+
+### `/data/places/{id}/votes`
+
+Get all voting data for a polling place with `{id}`
+
+DONE? Yes
 
 ### `/data/divisions/info`
 
