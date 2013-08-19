@@ -14,8 +14,15 @@
     Hi
     <div id="map"></div>
 
-    <script src="/lib/leaflet/leaflet.js"></script>
+    <script id="tpl-place-popup" type="text/x-template">
+        <h3><%- PollingPlaceNm %></h3>
+        <p>Blah</p>
+    </script>
+
+    <script src="/lib/leaflet/leaflet-src.js"></script>
     <script src="/lib/leaflet/TileLayer.GeoJSON.js"></script>
+    <script src="/lib/underscore/underscore.js"></script>
+    <script src="/lib/superagent/superagent.js"></script>
     <script src="/js/votemap.js"></script>
 </body>
 </html>

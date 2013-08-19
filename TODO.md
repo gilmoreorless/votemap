@@ -7,7 +7,7 @@
 1. √ Clean up 2010 data
 *  √ Set up GeoCouch locally
 *  √ Import data into GeoCouch - work out the best JSON representations
-*    Play with data via Couch queries - see if it will work as desired
+*  √ Play with data via Couch queries - see if it will work as desired
 
 ### Backend
 
@@ -21,12 +21,13 @@
 
 1. √ Basic page with Leaflet
 *  √ Show dots for polling booths
-*    Special styling (size, colour) for dots on map
+*  √ Special styling (size, colour) for dots on map
 *    Click on dot to get more details of polling place results
-*    Get detailed list of candidates from server REST endpoint
-*    Link candidates and polling places
+*  √ Get detailed list of candidates from server REST endpoint
+*  √ Link candidates and polling places
 *    Toggle switch to change between first prefs & two-party preferred
 *    Try to combine multiple points into one "expando" blob at smaller zoom levels
+*    URL hash updates wth map position
 *    Analytics
 
 ### Design
