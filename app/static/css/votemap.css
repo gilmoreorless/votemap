@@ -1,4 +1,22 @@
 #map {
 	height: 100%;
 	min-height: 500px;
+	width: 500px;
+}
+.candidate-votes {
+	display: table;
+	list-style: none;
+	padding: 0;
+}
+.candidate-votes li {
+	display: table-row;
+}
+.candidate-votes li span {
+	display: table-cell;
+}
+.candidate-votes li span + span {
+	padding-left: 10px;
+}
+.candidate-vote-count, .candidate-vote-swing {
+	text-align: right;
 }

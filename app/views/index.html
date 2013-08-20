@@ -16,7 +16,15 @@
 
     <script id="tpl-place-popup" type="text/x-template">
         <h3><%- PollingPlaceNm %></h3>
-        <p>Blah</p>
+        <ul class="candidate-votes">
+        <% _.each(candidates, function (c) { %>
+            <li style="color: <%- c.colour %>">
+                <span class="candidate-name"><%- c.GivenNm %> <%- c.Surname %></span>
+                <span class="candidate-vote-count"><%- c.voteCount %></span>
+                <span class="candidate-vote-swing"><%- c.voteSwing %>%</span>
+            </li>
+        <% }) %>
+        </ul>
     </script>
 
     <script src="/lib/leaflet/leaflet-src.js"></script>

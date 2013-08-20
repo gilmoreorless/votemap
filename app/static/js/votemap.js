@@ -36,6 +36,15 @@ var VM = (function () {
 
     superagent.get('/data/candidates').end(function (res) {
         VM.data.candidates = res.body;
+        // Informal votes need a separate entry
+        VM.data.candidates.push({
+            CandidateID: 999,
+            PartyAb: 'INF',
+            PartyNm: '',
+            GivenNm: '',
+            Surname: 'INFORMAL'
+        });
+
         VM.data.candidates.byId = {};
         _.each(res.body, function (candidate) {
             VM.data.candidates.byId[candidate.CandidateID] = candidate;
@@ -61,29 +70,13 @@ var VM = (function () {
         }, 0);
     };
 
-    VM.utils.getStyleForFeature = function (feature) {
-        var v = feature.properties.votes;
-        var s = VM.settings;
-        var totalVotes = VM.utils.sum(_.pluck(v, 'OrdinaryVotesFirstPrefs'));
-        var size = (totalVotes / s.voteMax) * (s.sizeMax - s.sizeMin) + s.sizeMin;
-        // Assuming TCP for now
-        var winningCandidateData = _.reduce(v, function (prevMax, voteData) {
-            // TODO: Handle ties
-            if (voteData.OrdinaryVotesTCP) {
-                if (!prevMax.OrdinaryVotesTCP || voteData.OrdinaryVotesTCP > prevMax.OrdinaryVotesTCP) {
-                    return voteData;
-                }
-            }
-            return prevMax;
-        }, {});
-        var winningCandidate = VM.data.candidates.byId[winningCandidateData.CandidateID];
-        if (!winningCandidate) {
-            return {
-                fillOpacity: 0,
-                radius: 0
-            };
+    VM.utils.getColourForCandidate = function (candidate) {
+        // Handle just a candidate ID
+        if (_.isNumber(candidate)) {
+            candidate = VM.data.candidates.byId[candidate];
         }
-        var party = winningCandidate.PartyAb;
+
+        var party = candidate.PartyAb;
         var colour = VM.settings.colours[party];
         if (!colour && (party in VM.data.partyColourAlias)) {
             colour = VM.settings.colours[VM.data.partyColourAlias[party]];
@@ -91,6 +84,39 @@ var VM = (function () {
         if (!colour) {
             colour = '#999';
         }
+        return colour;
+    };
+
+    VM.utils.getStyleForFeature = function (feature) {
+        var votesData = feature.properties.votes;
+        var s = VM.settings;
+        var totalVotes = votesData.totalVotes;
+        if (!totalVotes) {
+            totalVotes = votesData.totalVotes = VM.utils.sum(_.pluck(votesData, 'OrdinaryVotesFirstPrefs'));
+        }
+        var size = (totalVotes / s.voteMax) * (s.sizeMax - s.sizeMin) + s.sizeMin;
+        // Assuming TCP for now
+        // TODO: Make this work for first prefs
+        var winningCandidate = votesData.winningCandidateTCP;
+        if (!winningCandidate) {
+            var winningCandidateData = _.reduce(votesData, function (prevMax, voteData) {
+                // TODO: Handle ties
+                if (voteData.OrdinaryVotesTCP) {
+                    if (!prevMax.OrdinaryVotesTCP || voteData.OrdinaryVotesTCP > prevMax.OrdinaryVotesTCP) {
+                        return voteData;
+                    }
+                }
+                return prevMax;
+            }, {});
+            winningCandidate = votesData.winningCandidateTCP = VM.data.candidates.byId[winningCandidateData.CandidateID];
+            if (!winningCandidate) {
+                return {
+                    fillOpacity: 0,
+                    radius: 0
+                };
+            }
+        }
+        var colour = VM.utils.getColourForCandidate(winningCandidate);
         // var party = p.alpVotes == p.libVotes ? 'tie' : p.alpVotes > p.libVotes ? 'alp' : 'lib';
         // var strength = party == 'tie' ? 0.5 : p[party + 'Perc'] / 100;
         // if (!feature.element) continue;
@@ -108,8 +134,26 @@ var VM = (function () {
     };
 
     VM.utils.renderFullDetailsForPlace = function (placeData) {
-        return VM.templates.placePopup(placeData);
-        return '<h3>' + placeData.PollingPlaceNm + '</h3>';
+        var data = _.clone(placeData);
+        // TODO: This is hard-coded for TCP, make work for first prefs
+        data.candidates = _.chain(data.votes)
+            .filter(function (voteData) {
+                return !!voteData.OrdinaryVotesTCP;
+            })
+            .map(function (voteData) {
+                var candidate = _.clone(VM.data.candidates.byId[voteData.CandidateID]);
+                _.extend(candidate, voteData, {
+                    colour: VM.utils.getColourForCandidate(candidate),
+                    voteCount: voteData.OrdinaryVotesTCP,
+                    voteSwing: voteData.SwingTCP
+                });
+                return candidate;
+            })
+            .sortBy(function (c) {
+                return -c.voteCount;
+            })
+            .value();
+        return VM.templates.placePopup(data);
     };
 
 
