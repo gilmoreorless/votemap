@@ -18,7 +18,8 @@ var VM = (function () {
             NP:  '#999900',  // National Party
             GRN: '#00ff00',  // The Greens
             IND: '#000000'   // Independent
-        }
+        },
+        voteType: 'tcp'  // 'tcp' or 'firstPrefs'
     };
 
 
@@ -95,20 +96,24 @@ var VM = (function () {
             totalVotes = votesData.totalVotes = VM.utils.sum(_.pluck(votesData, 'OrdinaryVotesFirstPrefs'));
         }
         var size = (totalVotes / s.voteMax) * (s.sizeMax - s.sizeMin) + s.sizeMin;
-        // Assuming TCP for now
-        // TODO: Make this work for first prefs
-        var winningCandidate = votesData.winningCandidateTCP;
+
+        var useFirstPrefs = VM.settings.voteType == 'firstPrefs';
+        var propSuffix = useFirstPrefs ? 'FirstPrefs' : 'TCP';
+        var voteProp = 'OrdinaryVotes' + propSuffix;
+        var winProp = 'winningCandidate' + propSuffix;
+
+        var winningCandidate = votesData[winProp];
         if (!winningCandidate) {
             var winningCandidateData = _.reduce(votesData, function (prevMax, voteData) {
                 // TODO: Handle ties
-                if (voteData.OrdinaryVotesTCP) {
-                    if (!prevMax.OrdinaryVotesTCP || voteData.OrdinaryVotesTCP > prevMax.OrdinaryVotesTCP) {
+                if (voteData[voteProp]) {
+                    if (!prevMax[voteProp] || voteData[voteProp] > prevMax[voteProp]) {
                         return voteData;
                     }
                 }
                 return prevMax;
             }, {});
-            winningCandidate = votesData.winningCandidateTCP = VM.data.candidates.byId[winningCandidateData.CandidateID];
+            winningCandidate = votesData[winProp] = VM.data.candidates.byId[winningCandidateData.CandidateID];
             if (!winningCandidate) {
                 return {
                     fillOpacity: 0,
@@ -135,17 +140,21 @@ var VM = (function () {
 
     VM.utils.renderFullDetailsForPlace = function (placeData) {
         var data = _.clone(placeData);
-        // TODO: This is hard-coded for TCP, make work for first prefs
+        var useFirstPrefs = VM.settings.voteType == 'firstPrefs';
+        var propSuffix = useFirstPrefs ? 'FirstPrefs' : 'TCP';
+        var voteProp = 'OrdinaryVotes' + propSuffix;
+        var swingProp = 'Swing' + propSuffix;
+
         data.candidates = _.chain(data.votes)
             .filter(function (voteData) {
-                return !!voteData.OrdinaryVotesTCP;
+                return !!voteData[voteProp];
             })
             .map(function (voteData) {
                 var candidate = _.clone(VM.data.candidates.byId[voteData.CandidateID]);
                 _.extend(candidate, voteData, {
                     colour: VM.utils.getColourForCandidate(candidate),
-                    voteCount: voteData.OrdinaryVotesTCP,
-                    voteSwing: voteData.SwingTCP
+                    voteCount: voteData[voteProp],
+                    voteSwing: voteData[swingProp]
                 });
                 return candidate;
             })
@@ -174,8 +183,9 @@ var VM = (function () {
         maxZoom: 18
     }).addTo(map);
 
+    var placesLayer;
     function initPlaceLayer() {
-        var placesLayer = new L.TileLayer.GeoJSON('/data/places/tile/{z}/{x}/{y}?votes=min', {
+        placesLayer = new L.TileLayer.GeoJSON('/data/places/tile/{z}/{x}/{y}?votes=min', {
             clipTiles: false,
             unique: function (feature) {
                 return feature.id;
@@ -184,7 +194,6 @@ var VM = (function () {
             style: VM.utils.getStyleForFeature,
             pointToLayer: function (feature, latlon) {
                 return L.circleMarker(latlon);
-                return L.marker(latlon);
             },
             onEachFeature: function (feature, layer) {
                 // Lazy evaluation of popup HTML content - only create it when it's definitely needed
@@ -197,10 +206,21 @@ var VM = (function () {
                     }
                 });
                 layer.bindPopup('');
-                // console.log('onEachFeature', feature, layer);
             }
         }).addTo(map);
     }
+
+
+    /*** DOM interaction ***/
+
+    document.getElementById('controls').addEventListener('click', function (e) {
+        if (e.target.nodeName != 'INPUT' || e.target.name != 'voteType') {
+            return;
+        }
+        VM.settings.voteType = e.target.value;
+        // TODO: Find a better way of redrawing that doesn't involve re-requesting all the tile data
+        placesLayer.redraw();
+    }, false);
 
 
     return VM;

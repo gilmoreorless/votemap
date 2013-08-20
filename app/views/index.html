@@ -11,7 +11,11 @@
     <link rel="stylesheet" href="/css/votemap.css" />
 </head>
 <body>
-    Hi
+    <div id="controls">
+        Vote data:
+        <label><input type="radio" name="voteType" value="tcp" checked> Two-Candidate Preferred</label>
+        <label><input type="radio" name="voteType" value="firstPrefs"> First Preferences</label>
+    </div>
     <div id="map"></div>
 
     <script id="tpl-place-popup" type="text/x-template">
