@@ -1,0 +1,4 @@
+{
+  "couch_url": "http://localhost:5984/",
+  "couch_db": "votemap-dev"
+}

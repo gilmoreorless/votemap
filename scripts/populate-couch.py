@@ -3,14 +3,28 @@
 import os
 import csv
 import glob
+import json
+import argparse
 import couchdb
 
-dirbase = '../data/2010/processed'
-dirpath = os.path.realpath(os.path.join(os.path.dirname(__file__), dirbase))
-designpath = os.path.realpath(os.path.join(os.path.dirname(__file__), '../data/couchdesigns'))
+default_year = '2010'
 
-couch_url = 'http://localhost:5984'
-couch_db = 'votemap-dev'
+parser = argparse.ArgumentParser(description='Take processed CSV files and add the data to CouchDB')
+parser.add_argument('-y', '--year', default=default_year)
+parser.add_argument('-c', '--config', default='dev')
+args = parser.parse_args()
+
+dirbase = '../data'
+dirpath = os.path.realpath(os.path.join(os.path.dirname(__file__), dirbase, args.year, 'processed'))
+designpath = os.path.realpath(os.path.join(os.path.dirname(__file__), dirbase, 'couchdesigns'))
+configpath = os.path.realpath(os.path.join(os.path.dirname(__file__), '../config'))
+
+with open(os.path.join(configpath, args.config + '.json')) as f:
+    raw_json = f.read()
+    config = json.loads(raw_json)
+
+couch_url = config['couch_url']
+couch_db = config['couch_db']
 couch = couchdb.Server(couch_url)
 db = couch[couch_db]
 batch_size = 10000
@@ -129,7 +143,7 @@ def run_design_docs():
     cmd_tpl = 'curl -X PUT {0}/{1}/_design/{2} --data-binary @{3}'
     for filename in glob.glob(os.path.join(designpath, '*.json')):
         name = os.path.splitext(os.path.basename(filename))[0]
-        # Yup, cheating, but I CBF going through the palavar of doing it properly via Python wrappers
+        # Yup, cheating, but I CBF going through the palaver of doing it properly via Python wrappers
         cmd = cmd_tpl.format(couch_url, couch_db, name, filename)
         os.system(cmd)
 

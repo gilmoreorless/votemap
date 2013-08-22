@@ -3,9 +3,16 @@
 import os
 import csv
 import glob
+import argparse
 
-dirbase = '../data/2010/'
-dirpath = os.path.realpath(os.path.join(os.path.dirname(__file__), dirbase))
+default_year = '2010'
+
+parser = argparse.ArgumentParser(description='Process raw CSV files from the AEC and prepare them for importing')
+parser.add_argument('-y', '--year', default=default_year)
+args = parser.parse_args()
+
+dirbase = '../data'
+dirpath = os.path.realpath(os.path.join(os.path.dirname(__file__), dirbase, args.year))
 dirraw  = os.path.join(dirpath, 'raw')
 dirproc = os.path.join(dirpath, 'processed')
 
@@ -13,7 +20,7 @@ dirproc = os.path.join(dirpath, 'processed')
 def strip_first_row(filename):
     with open(os.path.join(dirraw, filename), 'rb') as fin:
         csv_in = csv.reader(fin)
-        with open(dirproc + filename, 'wb') as fout:
+        with open(os.path.join(dirproc, filename), 'wb') as fout:
             csv_out = csv.writer(fout)
             # Skip the first row
             csv_in.next()

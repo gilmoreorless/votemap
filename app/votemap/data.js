@@ -3,7 +3,14 @@ var Q = require('q');
 var _ = require('underscore');
 var utils = require('./utils');
 
-var couch = Couch('http://localhost:5984/votemap-dev');
+var configName = 'dev';
+if (process.env.PROD) {
+    configName = 'prod';
+}
+var config = require('../../config/' + configName + '.json');
+console.log('Starting with config:', config);
+
+var couch = Couch(config.couch_url + config.couch_db);
 
 function getCandidates(opts) {
     opts = _.extend({}, opts || {});
