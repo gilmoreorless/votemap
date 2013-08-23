@@ -21,14 +21,15 @@
 
 1. √ Basic page with Leaflet
 *  √ Show dots for polling booths
-*  √ Special styling (size, colour) for dots on map
-*  √ Click on dot to get more details of polling place results
-*  √ Get detailed list of candidates from server REST endpoint
-*  √ Link candidates and polling places
-*    Toggle switch to change between first prefs & two-party preferred
+*  √ Special styling (size, colour) for dots on map
+*  √ Click on dot to get more details of polling place results
+*  √ Get detailed list of candidates from server REST endpoint
+*  √ Link candidates and polling places
+*  √ Toggle switch to change between first prefs & two-party preferred
 *    Try to combine multiple points into one "expando" blob at smaller zoom levels
-*    URL hash updates wth map position
+*    URL hash updates with map position
 *    Analytics
+*    Handle two different electorates for the same place (e.g. Old Toongabbie handles Greenway and Parramatta)
 
 ### Design
 

@@ -5,6 +5,7 @@
 var express = require('express');
 var _ = require('underscore');
 var dataStore = require('./votemap/data');
+var loggerUtil = require('./votemap/logger');
 
 var app = express();
 
@@ -31,8 +32,10 @@ app.get('/data/candidates', function (req, res) {
             return +id || 0;
         }) : +divisionId || 0;
     }
+    var logger = loggerUtil.create(req.url);
 
     dataStore.getCandidates(opts)
+        .then(logger.timerPromise(req.query))
         .then(function (data) {
             if (req.query.query) {
                 var query = req.query.query.toLowerCase();
@@ -44,7 +47,7 @@ app.get('/data/candidates', function (req, res) {
             res.json(data);
         })
         .fail(function (reason) {
-            console.error('FAIL GET /data/candidates:', reason);
+            logger.error(req, opts, reason);
             res.send(500, {reason: reason});
         });
 });
@@ -65,11 +68,13 @@ app.get('/data/places/tile/:zoom/:x/:y', function (req, res) {
             opts.voteDetails = ['CandidateID', 'OrdinaryVotesFirstPrefs', 'OrdinaryVotesTCP', 'SwingFirstPrefs', 'SwingTCP'];
         }
     }
+    var logger = loggerUtil.create(req.url);
 
     dataStore.getPlacesForTile(opts)
+        .then(logger.timerPromise())
         .then(res.json.bind(res))
         .fail(function (reason) {
-            console.error('FAIL GET /data/places/tile:', reason);
+            logger.error(req, opts, reason);
             res.send(500, {reason: reason});
         });
 });
@@ -77,10 +82,12 @@ app.get('/data/places/tile/:zoom/:x/:y', function (req, res) {
 // Votes for a place
 app.get('/data/places/:id/votes', function (req, res) {
     var id = +req.params.id || 0;
+    var logger = loggerUtil.create('/data/places/' + id + '/votes');
     dataStore.getVotesForPlace({placeId: id})
+        .then(logger.timerPromise())
         .then(res.json.bind(res))
         .fail(function (reason) {
-            console.error('FAIL GET /data/places/' + id + '/votes:', reason);
+            logger.error(req, {}, reason);
             res.send(500, {reason: reason});
         });
 });
