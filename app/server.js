@@ -25,7 +25,9 @@ app.get('/', function (req, res) {
 
 // List of candidates
 app.get('/data/candidates', function (req, res) {
-    var opts = {};
+    var opts = {
+        cacheKey: req.url
+    };
     var divisionId = req.query.divisionId;
     if (divisionId) {
         opts.divisionId = _.isArray(divisionId) ? _.map(divisionId, function (id) {
@@ -55,6 +57,7 @@ app.get('/data/candidates', function (req, res) {
 // Tile data - places
 app.get('/data/places/tile/:zoom/:x/:y', function (req, res) {
     var opts = {
+        cacheKey: req.url,
         zoom: req.params.zoom,
         x: req.params.x,
         y: req.params.y,

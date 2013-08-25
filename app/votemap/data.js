@@ -1,5 +1,6 @@
 var Couch = require('couch');
 var Q = require('q');
+var memjs = require('memjs');
 var _ = require('underscore');
 var utils = require('./utils');
 
@@ -11,10 +12,12 @@ var config = require('../../config/' + configName + '.json');
 console.log('Starting with config:', config);
 
 var couch = Couch(config.couch_url + config.couch_db);
+var memClient = memjs.Client.create();
+
+// memClient.flush();
 
 function getCandidates(opts) {
     opts = _.extend({}, opts || {});
-    var view = couch.design('candidates').view('by_division_id');
     var query = {};
     if (opts.divisionId) {
         if (_.isArray(opts.divisionId)) {
@@ -24,9 +27,18 @@ function getCandidates(opts) {
         }
     }
 
-    return Q.ninvoke(view, 'query', query).then(function (data) {
-        return _.map(data.rows, function (row) {
-            return _.omit(row.value, '_id', '_rev', 'datatype');
+    return Q.ninvoke(memClient, 'get', opts.cacheKey).then(function (data) {
+        if (data && data[0]) {
+            return JSON.parse(data[0].toString());
+        }
+
+        var view = couch.design('candidates').view('by_division_id');
+        return Q.ninvoke(view, 'query', query).then(function (data) {
+            data = _.map(data.rows, function (row) {
+                return _.omit(row.value, '_id', '_rev', 'datatype');
+            });
+            memClient.set(opts.cacheKey, JSON.stringify(data));
+            return data;
         });
     });
 }
@@ -49,44 +61,54 @@ function getPlacesForTile(opts) {
     var url = '_design/places/_spatial/for_bounds?bbox=' + bounds.join(',');
     console.log('GET {db}/' + url);
 
-    var promise = Q.ninvoke(couch, 'get', url).then(function (data) {
-        var geoPoints = _.map(data.rows, function (row) {
+    return Q.ninvoke(memClient, 'get', opts.cacheKey).then(function (data) {
+        if (data && data[0]) {
+            return JSON.parse(data[0].toString());
+        }
+
+        var promise = Q.ninvoke(couch, 'get', url).then(function (data) {
+            var geoPoints = _.map(data.rows, function (row) {
+                return {
+                    type: 'Feature',
+                    id: row.id,
+                    geometry: row.geometry,
+                    properties: _.omit(row.value, '_id', '_rev', 'datatype', 'DivisionNm', 'Latitude', 'Longitude')
+                };
+            });
             return {
-                type: 'Feature',
-                id: row.id,
-                geometry: row.geometry,
-                properties: _.omit(row.value, '_id', '_rev', 'datatype', 'DivisionNm', 'Latitude', 'Longitude')
+                type: 'FeatureCollection',
+                bbox: bounds,
+                features: geoPoints
             };
         });
-        return {
-            type: 'FeatureCollection',
-            bbox: bounds,
-            features: geoPoints
-        };
-    });
-    if (opts.withVotes) {
-        promise = promise.then(function (data) {
-            var ids = _.map(data.features, function (place) {
-                return place.properties.PollingPlaceID;
-            });
-            return getVotesForPlace({placeId: ids}).then(function (voteData) {
-                var votesByPlace = _.groupBy(voteData, 'PollingPlaceID');
-                _.each(data.features, function (place) {
-                    place.properties.votes = _.map(votesByPlace[place.properties.PollingPlaceID], function (details) {
-                        if (_.isArray(opts.voteDetails)) {
-                            details = _.pick(details, opts.voteDetails);
-                        } else {
-                            details = _.omit(details, 'PollingPlaceID', 'PollingPlace');
-                        }
-                        return details;
-                    });
+        if (opts.withVotes) {
+            promise = promise.then(function (data) {
+                var ids = _.map(data.features, function (place) {
+                    return place.properties.PollingPlaceID;
                 });
-                return data;
+                return getVotesForPlace({placeId: ids}).then(function (voteData) {
+                    var votesByPlace = _.groupBy(voteData, 'PollingPlaceID');
+                    _.each(data.features, function (place) {
+                        place.properties.votes = _.map(votesByPlace[place.properties.PollingPlaceID], function (details) {
+                            if (_.isArray(opts.voteDetails)) {
+                                details = _.pick(details, opts.voteDetails);
+                            } else {
+                                details = _.omit(details, 'PollingPlaceID', 'PollingPlace');
+                            }
+                            return details;
+                        });
+                    });
+                    return data;
+                });
             });
+        }
+        promise = promise.then(function (data) {
+            memClient.set(opts.cacheKey, JSON.stringify(data));
+            return data;
         });
-    }
 
-    return promise;
+        return promise;
+    });
 }
 
 function getVotesForPlace(opts) {
