@@ -20,6 +20,7 @@
 
     <script id="tpl-place-popup" type="text/x-template">
         <h3><%- PollingPlaceNm %></h3>
+        <h4><%- candidates[0].DivisionNm %></h4>
         <ul class="candidate-votes">
         <% _.each(candidates, function (c) { %>
             <li style="color: <%- c.colour %>">
@@ -32,6 +33,7 @@
     </script>
 
     <script src="/lib/leaflet/leaflet-src.js"></script>
+    <script src="/lib/leaflet/leaflet.hash.js"></script>
     <script src="/lib/leaflet/TileLayer.GeoJSON.js"></script>
     <script src="/lib/underscore/underscore.js"></script>
     <script src="/lib/superagent/superagent.js"></script>

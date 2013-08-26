@@ -183,6 +183,8 @@ var VM = (function () {
         maxZoom: 18
     }).addTo(map);
 
+    L.hash(map);
+
     var placesLayer;
     function initPlaceLayer() {
         placesLayer = new L.TileLayer.GeoJSON('/data/places/tile/{z}/{x}/{y}?votes=min', {

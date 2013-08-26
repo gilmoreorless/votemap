@@ -1,3 +1,8 @@
+/**
+ * https://github.com/glenrobertson/leaflet-tilelayer-geojson/
+ * Commit 7e2f7350b275471df286e40ba9ebb16ed77016c3 (2013-08-17)
+ */
+
 // Load data tiles from an AJAX data source
 L.TileLayer.Ajax = L.TileLayer.extend({
     _requests: [],

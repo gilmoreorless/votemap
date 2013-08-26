@@ -27,9 +27,11 @@
 *  √ Link candidates and polling places
 *  √ Toggle switch to change between first prefs & two-party preferred
 *    Try to combine multiple points into one "expando" blob at smaller zoom levels
-*    URL hash updates with map position
+*  √ URL hash updates with map position
 *    Analytics
 *    Handle two different electorates for the same place (e.g. Old Toongabbie handles Greenway and Parramatta)
+*    (Optional) Show a pie-chart-like marker instead of a plain circle, to better indicate % of votes for each party
+*    Concat and minify JS in production
 
 ### Design
 
@@ -40,7 +42,8 @@
 ### Hosting
 
 1.    Set up Heroku app
-*    Set up IrisCouch account / database
+*  √ Set up IrisCouch account / database
+*    Set up appropriate users / permissions
 *    Populate IrisCouch with data
 *    Connect app with IrisCouch and publish
 
