@@ -4,12 +4,8 @@ var memjs = require('memjs');
 var _ = require('underscore');
 var utils = require('./utils');
 
-var configName = 'dev';
-if (process.env.PROD) {
-    configName = 'prod';
-}
-var config = require('../../config/' + configName + '.json');
-console.log('Starting with config:', config);
+var config = utils.config();
+console.log('Starting with config (%s):', utils.env(), config);
 
 var couch = Couch(config.couch_url + config.couch_db);
 var memClient = memjs.Client.create();
@@ -59,13 +55,13 @@ function getPlacesForTile(opts) {
         northEast.lat
     ];
     var url = '_design/places/_spatial/for_bounds?bbox=' + bounds.join(',');
-    console.log('GET {db}/' + url);
 
     return Q.ninvoke(memClient, 'get', opts.cacheKey).then(function (data) {
         if (data && data[0]) {
             return JSON.parse(data[0].toString());
         }
 
+        console.log('GET {db}/' + url);
         var promise = Q.ninvoke(couch, 'get', url).then(function (data) {
             var geoPoints = _.map(data.rows, function (row) {
                 return {

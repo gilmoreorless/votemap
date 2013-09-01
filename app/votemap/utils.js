@@ -1,3 +1,23 @@
+
+var storedConfig;
+
+exports.env = function () {
+    var env = 'dev';
+    if (process.env.NODE_ENV) {
+        env = process.env.NODE_ENV === 'production' ? 'prod' : process.env.NODE_ENV;
+    }
+    return env;
+};
+
+exports.config = function () {
+    if (!storedConfig) {
+        var env = exports.env();
+        storedConfig = require('../../config/' + env + '.json');
+    }
+    return storedConfig;
+};
+
+
 // Tile <-> LatLon conversion functions from:
 // http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#ECMAScript_.28JavaScript.2FActionScript.2C_etc..29
 
