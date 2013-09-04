@@ -46,8 +46,8 @@ function getPlacesForTile(opts) {
     opts.zoom = +opts.zoom || 1;
     // This assumes a latitude < 0 (Southern Hemisphere) and longitude > 0 (East of Greenwich Meridian)
     // Since this site is only for Australia anyway, it works fine
-    var southWest = utils.tile2LatLon(opts.x, opts.y + 1, opts.zoom);
-    var northEast = utils.tile2LatLon(opts.x + 1, opts.y, opts.zoom);
+    var southWest = utils.tileToLatLon(opts.x, opts.y + 1, opts.zoom);
+    var northEast = utils.tileToLatLon(opts.x + 1, opts.y, opts.zoom);
     var bounds = [
         southWest.lon,
         southWest.lat,

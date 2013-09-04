@@ -8,9 +8,6 @@ var VM = (function () {
     };
 
     VM.settings = {
-        voteMax: 3500,
-        sizeMin: 4,
-        sizeMax: 10,
         colours: {
             TIED: '#ff00ff',
             ALP: '#ff0000',  // Australian Labor Party
@@ -19,7 +16,11 @@ var VM = (function () {
             GRN: '#00ff00',  // The Greens
             IND: '#000000'   // Independent
         },
-        voteType: 'tcp'  // 'tcp' or 'firstPrefs'
+        voteType: 'tcp',  // 'tcp' or 'firstPrefs'
+        // Placeholders - filled in by settings.js
+        voteMax: 0,
+        sizeMin: 0,
+        sizeMax: 0
     };
 
 
@@ -210,6 +211,8 @@ var VM = (function () {
                 layer.bindPopup('');
             }
         }).addTo(map);
+
+        // L.PieChartDataLayer
     }
 
 
