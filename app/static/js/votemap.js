@@ -92,44 +92,44 @@ var VM = (function () {
     VM.utils.getStyleForFeature = function (feature) {
         var votesData = feature.properties.votes;
         var s = VM.settings;
-        var totalVotes = votesData.totalVotes;
-        if (!totalVotes) {
-            totalVotes = votesData.totalVotes = VM.utils.sum(_.pluck(votesData, 'OrdinaryVotesFirstPrefs'));
-        }
-        var size = (totalVotes / s.voteMax) * (s.sizeMax - s.sizeMin) + s.sizeMin;
+        var size, colour;
 
-        var useFirstPrefs = VM.settings.voteType == 'firstPrefs';
-        var propSuffix = useFirstPrefs ? 'FirstPrefs' : 'TCP';
-        var voteProp = 'OrdinaryVotes' + propSuffix;
-        var winProp = 'winningCandidate' + propSuffix;
-
-        var winningCandidate = votesData[winProp];
-        if (!winningCandidate) {
-            var winningCandidateData = _.reduce(votesData, function (prevMax, voteData) {
-                // TODO: Handle ties
-                if (voteData[voteProp]) {
-                    if (!prevMax[voteProp] || voteData[voteProp] > prevMax[voteProp]) {
-                        return voteData;
-                    }
-                }
-                return prevMax;
-            }, {});
-            winningCandidate = votesData[winProp] = VM.data.candidates.byId[winningCandidateData.CandidateID];
-            if (!winningCandidate) {
-                return {
-                    fillOpacity: 0,
-                    radius: 0
-                };
+        if (feature.properties.type === 'combination') {
+            size = s.combinedSizeMax;
+            colour = '#606';
+        } else {
+            var totalVotes = votesData.totalVotes;
+            if (!totalVotes) {
+                totalVotes = votesData.totalVotes = VM.utils.sum(_.pluck(votesData, 'OrdinaryVotesFirstPrefs'));
             }
+            size = (totalVotes / s.voteMax) * (s.sizeMax - s.sizeMin) + s.sizeMin;
+
+            var useFirstPrefs = VM.settings.voteType == 'firstPrefs';
+            var propSuffix = useFirstPrefs ? 'FirstPrefs' : 'TCP';
+            var voteProp = 'OrdinaryVotes' + propSuffix;
+            var winProp = 'winningCandidate' + propSuffix;
+
+            var winningCandidate = votesData[winProp];
+            if (!winningCandidate) {
+                var winningCandidateData = _.reduce(votesData, function (prevMax, voteData) {
+                    // TODO: Handle ties
+                    if (voteData[voteProp]) {
+                        if (!prevMax[voteProp] || voteData[voteProp] > prevMax[voteProp]) {
+                            return voteData;
+                        }
+                    }
+                    return prevMax;
+                }, {});
+                winningCandidate = votesData[winProp] = VM.data.candidates.byId[winningCandidateData.CandidateID];
+                if (!winningCandidate) {
+                    return {
+                        fillOpacity: 0,
+                        radius: 0
+                    };
+                }
+            }
+            colour = VM.utils.getColourForCandidate(winningCandidate);
         }
-        var colour = VM.utils.getColourForCandidate(winningCandidate);
-        // var party = p.alpVotes == p.libVotes ? 'tie' : p.alpVotes > p.libVotes ? 'alp' : 'lib';
-        // var strength = party == 'tie' ? 0.5 : p[party + 'Perc'] / 100;
-        // if (!feature.element) continue;
-        // feature.element.setAttribute("class", "booth");
-        // feature.element.setAttribute("r", size);
-        // feature.element.setAttribute("fill", s.colours[party]);
-        // feature.element.setAttribute("fill-opacity", strength);
 
         return {
             fillColor: colour,

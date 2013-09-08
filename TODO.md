@@ -44,7 +44,7 @@
 1.    Set up Heroku app
 *  √ Set up IrisCouch account / database
 *    Set up appropriate users / permissions
-*    Populate IrisCouch with data
+*  √ Populate IrisCouch with data
 *    Connect app with IrisCouch and publish
 
 ## Part 2 - Electorates

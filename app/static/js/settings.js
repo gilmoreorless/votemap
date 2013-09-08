@@ -8,4 +8,6 @@
     scope.sizeMin = 4;
     // Maximum radius in pixels of a polling place dot
     scope.sizeMax = 10;
+    // Maximum radius in pixels of a combined set of polling places
+    scope.combinedSizeMax = 20;
 })();

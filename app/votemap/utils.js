@@ -1,4 +1,6 @@
 var settings = require('../static/js/settings.js');
+var _ = require('underscore');
+var gju = require('geojson-utils');
 var utils = exports;
 
 var storedConfig;
@@ -19,6 +21,61 @@ utils.config = function () {
     }
     return storedConfig;
 };
+
+// Formula taken from http://msdn.microsoft.com/en-us/library/aa940990.aspx
+var baseMPP = 156543.04;
+utils.metresPerPixel = function (lat, zoom) {
+    return baseMPP * Math.cos(lat * PI / 180) / Math.pow(2, zoom);
+};
+
+utils.clusterClosePoints = function (points, zoom) {
+    console.log('clusterClosePoints', points.length);
+    if (!points.length) {
+        return points;
+    }
+    var lat = points[0].geometry.coordinates[1];
+    var mpp = utils.metresPerPixel(lat, zoom);
+    var s = settings;
+
+    var newPoints = [];
+    var remainingPoints = _.clone(points);
+    var closePoints;
+    while (remainingPoints.length) {
+        var point = remainingPoints.pop();
+        var dotSize = 10; // TODO: Don't hardcode this, use dynamic radius instead
+        var mradius = dotSize * mpp;
+
+        // Kind of hacking _.groupBy to act as _.filter and _.reject in one go
+        var splitPoints = _.groupBy(remainingPoints, function (p) {
+            var pmradius = dotSize * mpp; // TODO: Stop using previous `dotSize`
+            // var combinedRadius = mradius + pmradius;
+            var combinedRadius = s.combinedSizeMax * 2 * mpp;
+            var isClose = gju.geometryWithinRadius(p.geometry, point.geometry, combinedRadius);
+            return +isClose;
+        });
+        remainingPoints = splitPoints[0] || [];
+        closePoints = splitPoints[1] || [];
+
+        if (closePoints.length) {
+            var combo = {
+                id: point.id + '-combination',
+                value: {
+                    type: 'combination',
+                    totalPoints: closePoints.length + 1
+                },
+                origPoints: [point].concat(closePoints)
+            };
+            // TODO: Do proper geometry
+            combo.geometry = point.geometry;
+            newPoints.push(combo);
+        } else {
+            newPoints.push(point);
+        }
+    }
+
+    return newPoints;
+};
+
 
 
 // Tile <-> LatLon conversion functions from:

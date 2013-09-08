@@ -2,6 +2,7 @@ var Couch = require('couch');
 var Q = require('q');
 var memjs = require('memjs');
 var _ = require('underscore');
+var gju = require('geojson-utils');
 var utils = require('./utils');
 
 var config = utils.config();
@@ -62,42 +63,70 @@ function getPlacesForTile(opts) {
         }
 
         console.log('GET {db}/' + url);
+        // Get raw polling place data
         var promise = Q.ninvoke(couch, 'get', url).then(function (data) {
-            var geoPoints = _.map(data.rows, function (row) {
-                return {
+            // Group any nearby points together to avoid sending large amounts of data back to the browser
+            var geoPoints = utils.clusterClosePoints(data.rows, opts.zoom);
+            // Convert CouchDB results into GeoJSON features
+            geoPoints = _.map(geoPoints, function (row) {
+                var point = {
                     type: 'Feature',
                     id: row.id,
                     geometry: row.geometry,
-                    properties: _.omit(row.value, '_id', '_rev', 'datatype', 'DivisionNm', 'Latitude', 'Longitude')
+                    // properties: _.omit(row.value, '_id', '_rev', 'datatype', 'DivisionNm', 'Latitude', 'Longitude')
+                    properties: _.omit(row.value, '_id', '_rev', 'datatype', 'DivisionNm', 'Latitude', 'Longitude',
+                        'PremisesStateAb', 'PremisesAddress1', 'PremisesAddress2', 'PremisesAddress3', 'PremisesPostCode', 'PremisesSuburb', 'PremisesNm')
                 };
+                if (row.origPoints) {
+                    point.origPoints = row.origPoints;
+                }
+                return point;
             });
+            // Make the whole list a GeoJSON FeatureCollection
             return {
                 type: 'FeatureCollection',
                 bbox: bounds,
                 features: geoPoints
             };
         });
+
+        // If vote data is requested, make an additional Couch request for votes per polling place
         if (opts.withVotes) {
             promise = promise.then(function (data) {
-                var ids = _.map(data.features, function (place) {
+                // Get a list of unique polling place IDs for the data set (including grouped places)
+                var ids = _.flatten(_.map(data.features, function (place) {
+                    if (place.properties.type === 'combination') {
+                        return _.map(place.origPoints, function (point) {
+                            return point.value.PollingPlaceID;
+                        });
+                    }
                     return place.properties.PollingPlaceID;
-                });
+                }));
+
+                // Get the votes for all unique places in the list
                 return getVotesForPlace({placeId: ids}).then(function (voteData) {
+                    // Group vote results into an array of results per polling place ID
                     var votesByPlace = _.groupBy(voteData, 'PollingPlaceID');
+                    // Add vote data to the original polling place object
                     _.each(data.features, function (place) {
                         place.properties.votes = _.map(votesByPlace[place.properties.PollingPlaceID], function (details) {
+                            // If a specific list of vote details is provided, return those values
                             if (_.isArray(opts.voteDetails)) {
                                 details = _.pick(details, opts.voteDetails);
+                            // Otherwise return all details minus redundant info that's already in the data
                             } else {
                                 details = _.omit(details, 'PollingPlaceID', 'PollingPlace');
                             }
                             return details;
                         });
+                        // Remove the temporary reference to grouped places, so they're not present in the JSON output
+                        delete place.origPoints;
                     });
                     return data;
                 });
             });
         }
+
         promise = promise.then(function (data) {
             memClient.set(opts.cacheKey, JSON.stringify(data));
             return data;

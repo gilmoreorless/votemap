@@ -12,6 +12,7 @@
     "couch": "~0.3.0",
     "q": "~0.9.6",
     "memjs": "0.7.x",
+    "geojson-utils": "1.0.x",
     "underscore": "~1.5.1"
   }
 }
