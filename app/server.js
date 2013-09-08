@@ -78,7 +78,7 @@ app.get('/data/places/tile/:zoom/:x/:y', function (req, res) {
         .then(res.json.bind(res))
         .fail(function (reason) {
             logger.error(req, opts, reason);
-            res.send(500, {reason: reason});
+            res.send(500, {reason: reason.message});
         });
 });
 
